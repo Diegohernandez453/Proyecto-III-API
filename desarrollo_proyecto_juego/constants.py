@@ -25,14 +25,14 @@ BAR_BACKGROUND = (100,100,100) #GRIS OSCURO
 #Intervalo de tiempo
 STATUS_UPDATE_INTERVAL = 1000
 
-# Sistema día/noche
 
+# Sistema día/noche
 DAY_LENGTH = 24000 # Duracion del dia en milisegundos (24 segundos)
 DAWN_TIME = 6000 # Amanecer a las 6:00
 MORNING_TIME = 8000 # Mañana completa a las 8:00
 DUSK_TIME = 18000 # Atardecer a las 18:00
 MIDNIGHT = 24000 # Medianoche (00:00)
-MAX_DARKNESS = 180 #Nivel máximo de oscuridad (0-255)
+MAX_DARKNESS = 200 #Nivel máximo de oscuridad (0-255)
 
 # Colores para iluminación
 NIGHT_COLOR = (20, 20, 50) # Color azul oscuro para la noche
