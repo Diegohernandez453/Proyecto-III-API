@@ -1,5 +1,6 @@
 import pygame
 import constants
+from constants import *
 import os
 
 class Character:
@@ -7,12 +8,25 @@ class Character:
         self.x = x
         self.y = y
         self.inventory = {"wood":0, "stone":0}
-        image_path = os.path.join ('desarrollo_proyecto_juego', 'assets', 'images', 'character', 'character.png')
-        self.image = pygame.image.load(image_path).convert_alpha()
-        self.image = pygame.transform.scale(self.image, (constants.PLAYER, constants.PLAYER))
-        self.size = self.image.get_width()
 
-        self.item_images= {
+        # Cargar la hoja de sprite
+        image_path = os.path.join ('desarrollo_proyecto_juego', 'assets', 'images', 'character', 'Player.png')
+        self.sprite_sheet = pygame.image.load(image_path).convert_alpha()
+
+        #Animation properties
+        self.frame_size = FRAME_SIZE
+        self.animation_frame = 0
+        self.animation_timer = 0
+        self.animation_delay = ANIMATION_DELAY
+        self.current_state = IDLE_DOWN
+        self.moving = False
+        self.facing_left = False
+    
+        # Load all animations
+        self.animations = self.load_animations()
+
+
+        self.item_images = {
             "wood": self.load_item_image("wood.png"),
             "stone": self.load_item_image("small_stone.png")
         }
@@ -21,6 +35,29 @@ class Character:
         self.food = constants.MAX_FOOD
         self.thirst = constants.MAX_THIRST
 
+    def load_animations(self):
+        animations = {}
+        for state in range (6): # 6 animations states
+            frames = []
+            for frame in range(BASIC_FRAMES): # 6 frames for animation
+                surface = pygame.Surface((self.frame_size, self.frame_size), pygame.SRCALPHA)
+                surface.blit(self.sprite_sheet, (0,0),
+                             (frame * self.frame_size,
+                              state * self.frame_size,
+                              self.frame_size,
+                              self.frame_size))
+
+                if constants.PLAYER != self.frame_size:
+                    surface = pygame.transform.scale(surface, (constants.PLAYER, constants.PLAYER))
+                frames.append(surface)
+            animations[state] = frames
+        return animations
+    
+    def update_animation(self):
+        current_time = pygame.time.get_ticks()
+        if current_time - self.animation_timer > self.animation_delay:
+            self.animation_timer = current_time
+            self.animation_frame = (self.animation_frame + 1) % 6
 
 
 
@@ -30,32 +67,64 @@ class Character:
         return pygame.transform.scale(image, (40, 40))
 
     def draw(self, screen):
-        screen.blit(self.image, (self.x, self.y))
-        self.draw_status_bars(screen)
+        current_frame = self.animations[self.current_state][self.animation_frame]
+        if self.facing_left:
+            current_frame = pygame.transform.flip(current_frame, True, False)
+        screen.blit(current_frame,(self.x, self.y))
+
 
     def move(self, dx, dy, world):
+        self.moving = dx != 0 or dy !=0
+
+        if self.moving:
+            if dy > 0:
+                self.current_state = WALK_DOWN
+                self.facing_left = False
+            elif dy < 0:
+                self.current_state = WALK_UP
+                self.facing_left = False
+            elif dx > 0:
+                self.current_state = WALK_RIGHT
+                self.facing_left = False
+            elif dx < 0:
+                self.current_state = WALK_RIGHT
+                self.facing_left = True
+        else:
+            if self.current_state == WALK_DOWN:
+                self.current_state = IDLE_DOWN
+            elif self.current_state == WALK_UP:
+                self.current_state = IDLE_UP
+            elif self.current_state == WALK_RIGHT:
+                self.current_state = IDLE_RIGHT
+
+
         new_x = self.x + dx
         new_y = self.y + dy
         
         for tree in world.trees:
             if self.check_collision(new_x, new_y, tree):
+                self.moving = False
                 return
+            
+
         self.x = new_x
         self.y = new_y
-        self.x = max(0, min(self.x, constants.WIDTH - self.size))
-        self.y = max(0, min(self.y, constants.HEIGHT - self.size))
+        self.x = max(0, min(self.x, constants.WIDTH - constants.PLAYER))
+        self.y = max(0, min(self.y, constants.HEIGHT - constants.PLAYER))
+
+        self.update_animation()
 
         #Cuando se mueve pierde energia
         self.update_energy(-0.1)
 
 
     def check_collision(self, x, y, obj):
-        return (x < obj.x + obj.size*.75 and x + self.size*.75 > obj.x and y < obj.y + obj.size*.75 and
-                y + self.size*.75 > obj.y)
+        return (x < obj.x + obj.size*.75 and x + constants.PLAYER*.75 > obj.x and y < obj.y + obj.size*.75 and
+                y + constants.PLAYER*.75 > obj.y)
 
     def is_near(self, obj):
-        return (abs(self.x - obj.x) <= max(self.size, obj.size)+5 and
-                abs(self.y - obj.y) <= max(self.size, obj.size)+5)
+        return (abs(self.x - obj.x) <= max(constants.PLAYER, obj.size)+5 and
+                abs(self.y - obj.y) <= max(constants.PLAYER, obj.size)+5)
     
     def interact(self, world):
         for tree in world.trees:
