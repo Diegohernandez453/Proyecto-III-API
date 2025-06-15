@@ -66,12 +66,20 @@ class Character:
         image = pygame.image.load(path).convert_alpha()
         return pygame.transform.scale(image, (40, 40))
 
-    def draw(self, screen):
+    def draw(self, screen, camera_x, camera_y):
+        # Calcular posición relativa a la cámara
+        screen_x = self.x - camera_x
+        screen_y = self.y - camera_y
+
+
         current_frame = self.animations[self.current_state][self.animation_frame]
         if self.facing_left:
             current_frame = pygame.transform.flip(current_frame, True, False)
-        screen.blit(current_frame,(self.x, self.y))
+        screen.blit(current_frame,(screen_x, screen_y))
 
+
+
+        self.draw_status_bars(screen)
 
     def move(self, dx, dy, world):
         self.moving = dx != 0 or dy !=0
@@ -97,7 +105,6 @@ class Character:
             elif self.current_state == WALK_RIGHT:
                 self.current_state = IDLE_RIGHT
 
-
         new_x = self.x + dx
         new_y = self.y + dy
         
@@ -109,13 +116,11 @@ class Character:
 
         self.x = new_x
         self.y = new_y
-        self.x = max(0, min(self.x, constants.WIDTH - constants.PLAYER))
-        self.y = max(0, min(self.y, constants.HEIGHT - constants.PLAYER))
 
         self.update_animation()
 
         #Cuando se mueve pierde energia
-        self.update_energy(-0.1)
+        self.update_energy(-constants.MOVEMENT_ENERGY_COST)
 
 
     def check_collision(self, x, y, obj):
@@ -202,10 +207,10 @@ class Character:
                     (x_offset, y_offset, bar_width * (self.thirst / constants.MAX_THIRST), bar_height))
 
     def update_status(self):
-        self.update_food(-1)
-        self.update_thirst(-2)
+        self.update_food(-constants.FOOD_DECREASE_RATE)
+        self.update_thirst(-constants.THIRST_DECREASE_RATE)
 
         if self.food < constants.MAX_FOOD * 0.2 or self.thirst < constants.MAX_THIRST * 0.2:
-            self.update_energy(-1)
+            self.update_energy(constants.ENERGY_DECREASE_RATE)
         else:
-            self.update_energy(0.5)
+            self.update_energy(constants.ENERGY_INCREASE_RATE)

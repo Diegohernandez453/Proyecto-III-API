@@ -19,6 +19,11 @@ def main():
 
     status_update_timer = 0
 
+    # Variables para la cámara
+    camera_x = 0
+    camera_y = 0
+
+
     while True:
         dt = clock.tick(60)
 
@@ -37,17 +42,27 @@ def main():
                 if event.key == pygame.K_t:
                     character.update_thirst(20)  
 
+        dx = dy = 0
+
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
-            character.move(-5, 0, world)
+            dx = -5
         if keys[pygame.K_RIGHT]:
-            character.move(5, 0, world)
+            dx = 5
         if keys[pygame.K_UP]:
-            character.move(0, -5, world)
+            dy = -5
         if keys[pygame.K_DOWN]:
-            character.move(0, 5, world)
+            dy = 5
+        character.move(dx, dy, world)
 
-        #Actuañizar el tiempo del día
+        # La cámara sigue al personaje
+        camera_x = character.x - constants.WIDTH // 2
+        camera_y = character.y - constants.HEIGHT // 2
+
+        # Actualizar los chunks basado en la posición del personaje
+        world.uptade_chunks(character.x, character.y)
+
+        #Actualizar el tiempo del día
         world.update_time(dt)
 
         status_update_timer += dt
@@ -60,8 +75,14 @@ def main():
             pygame.quit()
             sys.exit()
 
-        world.draw(screen)
-        character.draw(screen)
+        # Limpiar pantalla
+        screen.fill((0, 0, 0))
+
+        # Dibujar mundo con effset de la cámara
+        world.draw(screen, camera_x, camera_y)
+
+    
+        character.draw(screen, camera_x, camera_y)
         if show_inventory:
             character.draw_inventory(screen)
 
@@ -79,6 +100,11 @@ def main():
         screen.blit(time_text, (10, constants.HEIGHT - 15))
 
         pygame.display.flip()
+
+
+
+
+
 
 
 if __name__ == "__main__":  
